@@ -49,7 +49,11 @@ serialnum: {
 satisfaction: {
     type: Number,
     required: true
-}
+},
+name: {
+    type: String,
+    required: true
+},
 });
 
 module.exports = User = mongoose.model("user", UserSchema);

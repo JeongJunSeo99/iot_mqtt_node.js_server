@@ -48,7 +48,8 @@ router.post("/sign_up", async (req, res) => { //회원가입
         wakeuptime: '0',
         sickness: '0',
         satisfaction: '0',
-        serialnum : req.body.serialnum
+        serialnum : req.body.serialnum,
+        name : req.body.name
         });
 
         const saveUser=await user.save();
@@ -86,7 +87,9 @@ router.post("/sign_in", async (req, res) => { //로그인
         else if(user){
             const r1 = {
                 code: 200,
-                msg: 'sucess'
+                msg: 'sucess',
+                serialnum : user.serialnum,
+                name : user.name
             };
             res.send(r1);
         }

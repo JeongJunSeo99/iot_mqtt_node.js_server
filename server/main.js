@@ -10,6 +10,7 @@ var Snore_data=require("./models/snore_data");
 var Bed_data=require("./models/bed_data");
 var Mat_data=require("./models/mat_data");
 var Ack_data=require("./models/ack_data");
+var Control=require("./models/control");
 var mqtt=require('mqtt');
 var moment = require('moment');
 var client =mqtt.connect('mqtt://220.149.244.199:1833');
@@ -301,7 +302,208 @@ Enviroment_data.find(function(err, a){
 });
 */
 
-app.post("/bed", async (req, res) => {
+app.post("/angle", async (req, res) => {
+
+    console.log(req.body);
+
+    try {
+       
+        sid = req.body.serialnum
+        let today = new Date();
+        let cur_time = today.toLocaleString();
+      /*
+        let today = new Date();
+        let cur_time = today.toLocaleString();
+        let control = await control.findOne({ serialnum: sid }); // control table 필요
+        let timestamp = + new Date();
+        control = new Control({
+            command_type : "4",
+            mh_sn : sid,
+            head_count : req.body.head_count,
+            foot_count : req.body.foot_count,
+            time : timestamp,
+            function_mode : "?" //function mode 처리 부분이 어디인지
+        });
+
+        const saveControl=await control.save();
+        const r1 = {
+            code: 200,
+            msg: 'sucess'
+        };
+        res.send(r1);
+*/
+        var options = {
+            qos:1
+        };
+        var bed_control = 'command/' + sid;
+        var bed_control1 = '/command/' + sid;
+        var a = 4;
+        var b = 1000;
+        var c = 0;
+        var d = 1;
+
+        var msg = req.body.btnnum;
+        //console.log(msg)
+        
+        var head_count= 0;
+        var leg_count=0;
+
+        if(msg== "headup" ){
+            let control = await Control.findOne({ serial: sid, msg: "head" }).sort({"_id":-1}).limit(1);
+            if(control){
+                head_count = control.head_count + 10;
+                control = new Control({
+                    time: cur_time,
+                    msg: "head",
+                    head_count: head_count,
+                    serial : sid
+                });
+                const saveControl=await control.save();
+            }
+            else{
+                head_count = 10;
+                control = new Control({
+                    time: cur_time,
+                    msg: "head",
+                    head_count: head_count,
+                    serial : sid
+                });
+                const saveControl=await control.save();
+            }
+            
+        }
+        else if(msg == "headdown"){
+            let control = await Control.findOne({ serial: sid, msg: "head" }).sort({"_id":-1}).limit(1);
+            if(control){
+                if(control.head_count >=10){
+                    head_count = control.head_count - 10;
+                    control = new Control({
+                        time: cur_time,
+                        msg: "head",
+                        head_count: head_count,
+                        serial : sid
+                    });
+                    const saveControl=await control.save();
+                }
+                else{
+                    head_count = 0;
+                    control = new Control({
+                        time: cur_time,
+                        msg: "head",
+                        head_count: head_count,
+                        serial : sid
+                    });
+                    const saveControl=await control.save();
+                }
+            }
+            else{
+                head_count = 0;
+                control = new Control({
+                    time: cur_time,
+                    msg: "head",
+                    head_count: head_count,
+                    serial : sid
+                });
+                const saveControl=await control.save();
+            }
+            
+        
+        }
+        else if(msg == "legup"){
+            let control = await Control.findOne({ serial: sid, msg: "leg" }).sort({"_id":-1}).limit(1);
+            if(control){
+                leg_count = control.leg_count + 10;
+                control = new Control({
+                    time: cur_time,
+                    msg: "leg",
+                    leg_count: leg_count,
+                    serial : sid
+                });
+                const saveControl=await control.save();
+            }
+            else{
+                leg_count = 10;
+                control = new Control({
+                    time: cur_time,
+                    msg: "leg",
+                    leg_count: leg_count,
+                    serial : sid
+                });
+                const saveControl=await control.save();
+            }
+            
+        }
+        else if(msg == "legdown"){
+            let control = await Control.findOne({ serial: sid, msg: "leg" }).sort({"_id":-1}).limit(1);
+            if(control){
+                if(control.leg_count >=10){
+                    leg_count = control.leg_count - 10;
+                    control = new Control({
+                        time: cur_time,
+                        msg: "leg",
+                        leg_count: leg_count,
+                        serial : sid
+                    });
+                    const saveControl=await control.save();
+                }
+                else{
+                    leg_count = 0;
+                    control = new Control({
+                        time: cur_time,
+                        msg: "leg",
+                        leg_count: leg_count,
+                        serial : sid
+                    });
+                    const saveControl=await control.save();
+                }
+            }
+            else{
+                leg_count = 0;
+                control = new Control({
+                    time: cur_time,
+                    msg: "leg",
+                    leg_count: leg_count,
+                    serial : sid
+                });
+                const saveControl=await control.save();
+            }
+            
+        }
+
+        bed_c = {
+            "function_mode" : d,
+            "command_type" :a,
+            "mh_sn" : sid,
+            "head_count" : head_count,
+            //"count" : 100
+            "foot_count" : leg_count
+        };
+
+
+        
+        
+        console.log(bed_c)
+        
+        //client.publish(bed_control,JSON.stringify(bed_c));
+        client.publish(bed_control,JSON.stringify(bed_c),options);
+        //client.publish('common/H10000000000',JSON.stringify(bed_c),options);
+        //client.publish('common',JSON.stringify(bed_c),options);
+
+        
+        //client.publish(bed_control1, JSON.stringify(bed_c));
+        res.send("sucess");
+    }
+    catch (error) {
+        console.error(error.message);
+        const result = {
+            code: 500,
+            msg: 'server error'
+        };
+        res.send(result);
+    }
+});
+
+app.post("/mat", async (req, res) => {
 
     console.log(req.body);
 
@@ -333,138 +535,31 @@ app.post("/bed", async (req, res) => {
             qos:1
         };
         var bed_control = 'command/' + sid;
+
         var a = 4;
         var b = 1000;
         var c = 0;
         var d = 1;
-        bed_c = {
-            "function_mode" : d,
-            "command_type" :a,
+
+        //var msg = req.body.btnnum;
+        //console.log(msg)
+
+        mat_c = {
+            "command_type" :5,
             "mh_sn" : sid,
-            "head_count" : req.body.count,
-            //"count" : 100,
-            "foot_count" : 0
-            
+            "mat_command" : 3
         };
-        /*
-        bed_c2 = {
-            "command_type" :4,
-            "mh_sn" : sid,
-            "head_count" : 18,
-            "foot_count" : 3,
-            "function_mode"0 : 1
-        };
-        bed_c3 = {
-            "command_type" :4,
-            "mh_sn" : sid,
-            "head_count" : 18,
-            "foot_count" : 0,
-            "function_mode" : 3
-        };
-        bed_c4 = {
-            "command_type" :4,
-            "mh_sn" : sid,
-            "head_count" : 18,
-            "foot_count" : 0,
-            "function_mode" : 4
-        };
-        bed_c5 = {
-            "command_type" :4,
-            "mh_sn" : sid,
-            "head_count" : 18,
-            "foot_count" : 0,
-            "function_mode" : 5
-        };
-        bed_c6 = {
-            "command_type" :4,
-            "mh_sn" : sid,
-            "head_count" : 18,
-            "foot_count" : 0,
-            "function_mode" : 6
-        };
-        bed_c7 = {
-            "command_type" :4,
-            "mh_sn" : sid,
-            "head_count" : 18,
-            "foot_count" : 0,
-            "function_mode" : 7
-        };
-        */
+
+        console.log(mat_c)
+        
         //client.publish(bed_control,JSON.stringify(bed_c));
-        client.publish(bed_control,JSON.stringify(bed_c),options);
+        client.publish(bed_control,JSON.stringify(mat_c),options);
         //client.publish('common/H10000000000',JSON.stringify(bed_c),options);
         //client.publish('common',JSON.stringify(bed_c),options);
 
-        /*
-        client.publish(bed_control,JSON.stringify(bed_c2));
-        client.publish('/command/H10000000000',JSON.stringify(bed_c2));
-        client.publish('/command/MH1A0001',JSON.stringify(bed_c2));
-        client.publish(bed_control,JSON.stringify(bed_c3));
-        client.publish('/command/H10000000000',JSON.stringify(bed_c3));
-        client.publish('/command/MH1A0001',JSON.stringify(bed_c3));
-        client.publish(bed_control,JSON.stringify(bed_c4));
-        client.publish('/command/H10000000000',JSON.stringify(bed_c4));
-        client.publish('/command/MH1A0001',JSON.stringify(bed_c4));
-        client.publish(bed_control,JSON.stringify(bed_c5));
-        client.publish('/command/H10000000000',JSON.stringify(bed_c5));
-        client.publish('/command/MH1A0001',JSON.stringify(bed_c5));
-        client.publish(bed_control,JSON.stringify(bed_c6));
-        client.publish('/command/H10000000000',JSON.stringify(bed_c6));
-        client.publish('/command/MH1A0001',JSON.stringify(bed_c6));
-        client.publish(bed_control,JSON.stringify(bed_c7));
-        client.publish('/command/H10000000000',JSON.stringify(bed_c7));
-        client.publish('/command/MH1A0001',JSON.stringify(bed_c7));
-            //client.subscribe(bed_control);
-            //client.publish(bed_control,JSON.stringify(buf_c));
-*/
-        //client.publish(bed_control, JSON.stringify(bed_c));
+        
+        //client.publish(bed_control1, JSON.stringify(bed_c));
         res.send("sucess");
-    }
-    catch (error) {
-        console.error(error.message);
-        const result = {
-            code: 500,
-            msg: 'server error'
-        };
-        res.send(result);
-    }
-});
-
-app.post("/mat", async (req, res) => {
-
-    console.log(req.body);
-
-    try {
-        sid = req.body.serialnum
-      /*
-        let today = new Date();
-        let cur_time = today.toLocaleString();
-        let m_control = await m_control.findOne({ serialnum: sid }); // m_control table 필요
-        let timestamp = + new Date();
-        m_control = new M_control({
-            command_type : "5",
-            mh_sn : sid,
-            time :timestamp,
-            mat_command : req.body.mat_command,
-        });
-
-        const saveControl=await control.save();
-        const r1 = {
-            code: 200,
-            msg: 'sucess'
-        };
-        res.send(r1);
-*/
-        var mat_control = '/command/' + sid;
-
-        mat_c = {
-            "command_type" : "4",
-            "mh_sn" : sid,
-            "mat_command" : req.body.mat_command
-        };
-
-        client.publish(mat_control, JSON.stringify(mat_c));
-
     }
     catch (error) {
         console.error(error.message);
